@@ -1,0 +1,18 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "Fictional claims provider", "version": "1.0.0" },
+  "servers": [{ "url": "http://127.0.0.1:7071/pairs/pair-01/claims" }],
+  "paths": {
+    "/policies/{policyId}/summary": {
+      "get": {
+        "operationId": "getClaimsSummary",
+        "parameters": [{ "name": "policyId", "in": "path", "required": true, "schema": { "type": "string", "pattern": "^POL[0-9]{4}$" } }],
+        "responses": {
+          "200": { "description": "Claims summary; reserved failure fixtures intentionally violate this contract", "content": { "application/json": { "schema": { "$ref": "schemas.json#/definitions/ClaimsSummary" } } } },
+          "404": { "description": "Policy not found", "content": { "application/json": { "schema": { "$ref": "schemas.json#/definitions/Error" } } } },
+          "503": { "description": "Synthetic dependency failure", "content": { "application/json": { "schema": { "$ref": "schemas.json#/definitions/Error" } } } }
+        }
+      }
+    }
+  }
+}

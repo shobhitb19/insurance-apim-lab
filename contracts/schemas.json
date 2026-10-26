@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+  "Policy": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["policyId", "status", "product"],
+    "properties": {
+      "policyId": { "type": "string", "pattern": "^POL[0-9]{4}$" },
+      "status": { "type": "string", "enum": ["Active"] },
+      "product": { "type": "string", "enum": ["Home", "Motor"] }
+    }
+  },
+  "ExtendedPolicy": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["policyId", "status", "product", "riskCategory"],
+    "properties": {
+      "policyId": { "type": "string", "pattern": "^POL[0-9]{4}$" },
+      "status": { "type": "string", "enum": ["Active"] },
+      "product": { "type": "string", "enum": ["Home", "Motor"] },
+      "riskCategory": { "type": "string", "enum": ["Standard", "Elevated"] }
+    }
+  },
+  "ClaimsSummary": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["policyId", "openClaimCount", "totalIncurred", "currency"],
+    "properties": {
+      "policyId": { "type": "string", "pattern": "^POL[0-9]{4}$" },
+      "openClaimCount": { "type": "integer", "minimum": 0 },
+      "totalIncurred": { "type": "number", "minimum": 0 },
+      "currency": { "type": "string", "enum": ["NZD"] }
+    }
+  },
+  "Overview": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["policy", "claimsSummary"],
+    "properties": {
+      "policy": { "$ref": "#/definitions/ExtendedPolicy" },
+      "claimsSummary": { "$ref": "#/definitions/ClaimsSummary" }
+    }
+  },
+  "Error": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["code", "message", "correlationId"],
+    "properties": {
+      "code": { "type": "string" },
+      "message": { "type": "string" },
+      "correlationId": { "type": "string" }
+    }
+    }
+  }
+}

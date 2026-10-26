@@ -1,0 +1,551 @@
+{
+  "info": {
+    "name": "Insurance APIM guided lab",
+    "description": "Synthetic data only. Run Provider locally; gateway folders require facilitator readiness. Run baseline OR extended for the current checkpoint, not both. Gateway exercises have not been validated against your Azure service.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Provider (local, no key)",
+      "item": [
+        {
+          "name": "Baseline policy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{fixtureBaseUrl}}/pairs/{{pairId}}/baseline/policies/POL1001",
+            "description": "Expected 200. No response body or credentials are written to the console."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Expected response body', () => pm.expect(body).to.deep.equal({\"policyId\":\"POL1001\",\"status\":\"Active\",\"product\":\"Home\"}));",
+                  "pm.test('Safe correlation header', () => pm.expect(pm.response.headers.get('X-Correlation-Id')).to.match(/^[A-Za-z0-9-]{1,64}$/));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Extended policy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{fixtureBaseUrl}}/pairs/{{pairId}}/extended/policies/POL1001",
+            "description": "Expected 200. No response body or credentials are written to the console."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Expected response body', () => pm.expect(body).to.deep.equal({\"policyId\":\"POL1001\",\"status\":\"Active\",\"product\":\"Home\",\"riskCategory\":\"Elevated\"}));",
+                  "pm.test('Safe correlation header', () => pm.expect(pm.response.headers.get('X-Correlation-Id')).to.match(/^[A-Za-z0-9-]{1,64}$/));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Claims for second policy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{fixtureBaseUrl}}/pairs/{{pairId}}/claims/policies/POL1002/summary",
+            "description": "Expected 200. No response body or credentials are written to the console."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Expected response body', () => pm.expect(body).to.deep.equal({\"policyId\":\"POL1002\",\"openClaimCount\":0,\"totalIncurred\":0,\"currency\":\"NZD\"}));",
+                  "pm.test('Safe correlation header', () => pm.expect(pm.response.headers.get('X-Correlation-Id')).to.match(/^[A-Za-z0-9-]{1,64}$/));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown policy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{fixtureBaseUrl}}/pairs/{{pairId}}/baseline/policies/POL9999",
+            "description": "Expected 404. No response body or credentials are written to the console."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 404', () => pm.response.to.have.status(404));",
+                  "const body = pm.response.json();",
+                  "pm.test('Expected response body', () => pm.expect(body).to.include({\"code\":\"PolicyNotFound\"}));",
+                  "pm.test('Safe correlation header', () => pm.expect(pm.response.headers.get('X-Correlation-Id')).to.match(/^[A-Za-z0-9-]{1,64}$/));",
+                  "pm.test('Error is explicit and correlated', () => { pm.expect(body).to.have.all.keys('code','message','correlationId'); pm.expect(body.correlationId).to.equal(pm.response.headers.get('X-Correlation-Id')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Claims dependency failure",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{fixtureBaseUrl}}/pairs/{{pairId}}/claims/policies/POL5001/summary",
+            "description": "Expected 503. No response body or credentials are written to the console."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 503', () => pm.response.to.have.status(503));",
+                  "const body = pm.response.json();",
+                  "pm.test('Expected response body', () => pm.expect(body).to.include({\"code\":\"FixtureUnavailable\"}));",
+                  "pm.test('Safe correlation header', () => pm.expect(pm.response.headers.get('X-Correlation-Id')).to.match(/^[A-Za-z0-9-]{1,64}$/));",
+                  "pm.test('Error is explicit and correlated', () => { pm.expect(body).to.have.all.keys('code','message','correlationId'); pm.expect(body.correlationId).to.equal(pm.response.headers.get('X-Correlation-Id')); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Gateway baseline (modules 2-5)",
+      "item": [
+        {
+          "name": "Baseline proxy",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Ocp-Apim-Subscription-Key",
+                "value": "{{subscriptionKey}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{gatewayBaseUrl}}/policies/POL1001",
+            "description": "Expected 200. No response body or credentials are written to the console."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Expected response body', () => pm.expect(body).to.deep.equal({\"policyId\":\"POL1001\",\"status\":\"Active\",\"product\":\"Home\"}));",
+                  "pm.test('Safe correlation header', () => pm.expect(pm.response.headers.get('X-Correlation-Id')).to.match(/^[A-Za-z0-9-]{1,64}$/));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Missing subscription key",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gatewayBaseUrl}}/policies/POL1001",
+            "description": "Expected 401. No response body or credentials are written to the console."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 401', () => pm.response.to.have.status(401));",
+                  "const body = pm.response.json();",
+                  "pm.test('Expected response body', () => pm.expect(body).to.include({\"statusCode\":401}));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invalid subscription key",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Ocp-Apim-Subscription-Key",
+                "value": "invalid-workshop-key",
+                "type": "text"
+              }
+            ],
+            "url": "{{gatewayBaseUrl}}/policies/POL1001",
+            "description": "Expected 401. No response body or credentials are written to the console."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 401', () => pm.response.to.have.status(401));",
+                  "const body = pm.response.json();",
+                  "pm.test('Expected response body', () => pm.expect(body).to.include({\"statusCode\":401}));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown policy",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Ocp-Apim-Subscription-Key",
+                "value": "{{subscriptionKey}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{gatewayBaseUrl}}/policies/POL9999",
+            "description": "Expected 404. No response body or credentials are written to the console."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 404', () => pm.response.to.have.status(404));",
+                  "const body = pm.response.json();",
+                  "pm.test('Expected response body', () => pm.expect(body).to.include({\"code\":\"PolicyNotFound\"}));",
+                  "pm.test('Safe correlation header', () => pm.expect(pm.response.headers.get('X-Correlation-Id')).to.match(/^[A-Za-z0-9-]{1,64}$/));",
+                  "pm.test('Error is explicit and correlated', () => { pm.expect(body).to.have.all.keys('code','message','correlationId'); pm.expect(body.correlationId).to.equal(pm.response.headers.get('X-Correlation-Id')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invalid ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Ocp-Apim-Subscription-Key",
+                "value": "{{subscriptionKey}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{gatewayBaseUrl}}/policies/INVALID",
+            "description": "Expected 400. No response body or credentials are written to the console."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 400', () => pm.response.to.have.status(400));",
+                  "const body = pm.response.json();",
+                  "pm.test('Expected response body', () => pm.expect(body).to.include({\"code\":\"InvalidPolicyId\"}));",
+                  "pm.test('Safe correlation header', () => pm.expect(pm.response.headers.get('X-Correlation-Id')).to.match(/^[A-Za-z0-9-]{1,64}$/));",
+                  "pm.test('Error is explicit and correlated', () => { pm.expect(body).to.have.all.keys('code','message','correlationId'); pm.expect(body.correlationId).to.equal(pm.response.headers.get('X-Correlation-Id')); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Gateway extended (module 6 onward)",
+      "item": [
+        {
+          "name": "Extended proxy",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Ocp-Apim-Subscription-Key",
+                "value": "{{subscriptionKey}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{gatewayBaseUrl}}/policies/POL1001",
+            "description": "Expected 200. No response body or credentials are written to the console."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Expected response body', () => pm.expect(body).to.deep.equal({\"policyId\":\"POL1001\",\"status\":\"Active\",\"product\":\"Home\",\"riskCategory\":\"Elevated\"}));",
+                  "pm.test('Safe correlation header', () => pm.expect(pm.response.headers.get('X-Correlation-Id')).to.match(/^[A-Za-z0-9-]{1,64}$/));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Second extended policy",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Ocp-Apim-Subscription-Key",
+                "value": "{{subscriptionKey}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{gatewayBaseUrl}}/policies/POL1002",
+            "description": "Expected 200. No response body or credentials are written to the console."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Expected response body', () => pm.expect(body).to.deep.equal({\"policyId\":\"POL1002\",\"status\":\"Active\",\"product\":\"Motor\",\"riskCategory\":\"Standard\"}));",
+                  "pm.test('Safe correlation header', () => pm.expect(pm.response.headers.get('X-Correlation-Id')).to.match(/^[A-Za-z0-9-]{1,64}$/));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Gateway composition (module 7 onward)",
+      "item": [
+        {
+          "name": "Overview first policy",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Ocp-Apim-Subscription-Key",
+                "value": "{{subscriptionKey}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{gatewayBaseUrl}}/policies/POL1001/overview",
+            "description": "Expected 200. No response body or credentials are written to the console."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Expected response body', () => pm.expect(body).to.deep.equal({\"policy\":{\"policyId\":\"POL1001\",\"status\":\"Active\",\"product\":\"Home\",\"riskCategory\":\"Elevated\"},\"claimsSummary\":{\"policyId\":\"POL1001\",\"openClaimCount\":1,\"totalIncurred\":1250,\"currency\":\"NZD\"}}));",
+                  "pm.test('Safe correlation header', () => pm.expect(pm.response.headers.get('X-Correlation-Id')).to.match(/^[A-Za-z0-9-]{1,64}$/));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Overview second policy",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Ocp-Apim-Subscription-Key",
+                "value": "{{subscriptionKey}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{gatewayBaseUrl}}/policies/POL1002/overview",
+            "description": "Expected 200. No response body or credentials are written to the console."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Expected response body', () => pm.expect(body).to.deep.equal({\"policy\":{\"policyId\":\"POL1002\",\"status\":\"Active\",\"product\":\"Motor\",\"riskCategory\":\"Standard\"},\"claimsSummary\":{\"policyId\":\"POL1002\",\"openClaimCount\":0,\"totalIncurred\":0,\"currency\":\"NZD\"}}));",
+                  "pm.test('Safe correlation header', () => pm.expect(pm.response.headers.get('X-Correlation-Id')).to.match(/^[A-Za-z0-9-]{1,64}$/));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Ocp-Apim-Subscription-Key",
+                "value": "{{subscriptionKey}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{gatewayBaseUrl}}/policies/POL9999/overview",
+            "description": "Expected 404. No response body or credentials are written to the console."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 404', () => pm.response.to.have.status(404));",
+                  "const body = pm.response.json();",
+                  "pm.test('Expected response body', () => pm.expect(body).to.include({\"code\":\"PolicyNotFound\"}));",
+                  "pm.test('Safe correlation header', () => pm.expect(pm.response.headers.get('X-Correlation-Id')).to.match(/^[A-Za-z0-9-]{1,64}$/));",
+                  "pm.test('Error is explicit and correlated', () => { pm.expect(body).to.have.all.keys('code','message','correlationId'); pm.expect(body.correlationId).to.equal(pm.response.headers.get('X-Correlation-Id')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Failed claims overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Ocp-Apim-Subscription-Key",
+                "value": "{{subscriptionKey}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{gatewayBaseUrl}}/policies/POL5001/overview",
+            "description": "Expected 502. No response body or credentials are written to the console."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 502', () => pm.response.to.have.status(502));",
+                  "const body = pm.response.json();",
+                  "pm.test('Expected response body', () => pm.expect(body).to.include({\"code\":\"DependencyFailure\"}));",
+                  "pm.test('Safe correlation header', () => pm.expect(pm.response.headers.get('X-Correlation-Id')).to.match(/^[A-Za-z0-9-]{1,64}$/));",
+                  "pm.test('Error is explicit and correlated', () => { pm.expect(body).to.have.all.keys('code','message','correlationId'); pm.expect(body.correlationId).to.equal(pm.response.headers.get('X-Correlation-Id')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Timed out overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Ocp-Apim-Subscription-Key",
+                "value": "{{subscriptionKey}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{gatewayBaseUrl}}/policies/POL5002/overview",
+            "description": "Expected 504. No response body or credentials are written to the console."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 504', () => pm.response.to.have.status(504));",
+                  "const body = pm.response.json();",
+                  "pm.test('Expected response body', () => pm.expect(body).to.include({\"code\":\"DependencyTransportFailure\"}));",
+                  "pm.test('Safe correlation header', () => pm.expect(pm.response.headers.get('X-Correlation-Id')).to.match(/^[A-Za-z0-9-]{1,64}$/));",
+                  "pm.test('Error is explicit and correlated', () => { pm.expect(body).to.have.all.keys('code','message','correlationId'); pm.expect(body.correlationId).to.equal(pm.response.headers.get('X-Correlation-Id')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mismatched overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Ocp-Apim-Subscription-Key",
+                "value": "{{subscriptionKey}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{gatewayBaseUrl}}/policies/POL5003/overview",
+            "description": "Expected 502. No response body or credentials are written to the console."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 502', () => pm.response.to.have.status(502));",
+                  "const body = pm.response.json();",
+                  "pm.test('Expected response body', () => pm.expect(body).to.include({\"code\":\"InvalidDependencyResponse\"}));",
+                  "pm.test('Safe correlation header', () => pm.expect(pm.response.headers.get('X-Correlation-Id')).to.match(/^[A-Za-z0-9-]{1,64}$/));",
+                  "pm.test('Error is explicit and correlated', () => { pm.expect(body).to.have.all.keys('code','message','correlationId'); pm.expect(body.correlationId).to.equal(pm.response.headers.get('X-Correlation-Id')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Malformed overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Ocp-Apim-Subscription-Key",
+                "value": "{{subscriptionKey}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{gatewayBaseUrl}}/policies/POL5004/overview",
+            "description": "Expected 502. No response body or credentials are written to the console."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP 502', () => pm.response.to.have.status(502));",
+                  "const body = pm.response.json();",
+                  "pm.test('Expected response body', () => pm.expect(body).to.include({\"code\":\"GatewayFailure\"}));",
+                  "pm.test('Safe correlation header', () => pm.expect(pm.response.headers.get('X-Correlation-Id')).to.match(/^[A-Za-z0-9-]{1,64}$/));",
+                  "pm.test('Error is explicit and correlated', () => { pm.expect(body).to.have.all.keys('code','message','correlationId'); pm.expect(body.correlationId).to.equal(pm.response.headers.get('X-Correlation-Id')); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

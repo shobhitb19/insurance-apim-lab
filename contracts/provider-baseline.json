@@ -1,0 +1,17 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "Fictional policy provider - baseline", "version": "1.0.0" },
+  "servers": [{ "url": "http://127.0.0.1:7071/pairs/pair-01/baseline" }],
+  "paths": {
+    "/policies/{policyId}": {
+      "get": {
+        "operationId": "getPolicy",
+        "parameters": [{ "name": "policyId", "in": "path", "required": true, "schema": { "type": "string", "pattern": "^POL[0-9]{4}$" } }],
+        "responses": {
+          "200": { "description": "Baseline policy; riskCategory is absent", "content": { "application/json": { "schema": { "$ref": "schemas.json#/definitions/Policy" } } } },
+          "404": { "description": "Policy not found", "content": { "application/json": { "schema": { "$ref": "schemas.json#/definitions/Error" } } } }
+        }
+      }
+    }
+  }
+}

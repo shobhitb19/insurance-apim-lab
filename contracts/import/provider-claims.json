@@ -1,0 +1,106 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Fictional claims provider",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:7071/pairs/pair-01/claims"
+    }
+  ],
+  "paths": {
+    "/policies/{policyId}/summary": {
+      "get": {
+        "operationId": "getClaimsSummary",
+        "parameters": [
+          {
+            "name": "policyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^POL[0-9]{4}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Claims summary; reserved failure fixtures intentionally violate this contract",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "policyId",
+                    "openClaimCount",
+                    "totalIncurred",
+                    "currency"
+                  ],
+                  "properties": {
+                    "policyId": {
+                      "type": "string",
+                      "pattern": "^POL[0-9]{4}$"
+                    },
+                    "openClaimCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "totalIncurred": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "currency": {
+                      "type": "string",
+                      "enum": [
+                        "NZD"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Policy not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "code",
+                    "message",
+                    "correlationId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "correlationId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Synthetic dependency failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/paths/~1policies~1%7BpolicyId%7D~1summary/get/responses/404/content/application~1json/schema"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

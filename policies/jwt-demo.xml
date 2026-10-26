@@ -1,0 +1,10 @@
+<!-- Facilitator: insert this fragment immediately after inbound/base in a separate demo API.
+     Do not replace a complete policies document with this fragment. -->
+<validate-jwt header-name="Authorization" failed-validation-httpcode="401" failed-validation-error-message="Valid workshop access token required." require-scheme="Bearer">
+  <openid-config url="{{demo-openid-configuration-url}}" />
+  <audiences><audience>{{demo-audience}}</audience></audiences>
+  <issuers><issuer>{{demo-issuer}}</issuer></issuers>
+  <required-claims>
+    <claim name="roles" match="any"><value>Workshop.Reader</value></claim>
+  </required-claims>
+</validate-jwt>

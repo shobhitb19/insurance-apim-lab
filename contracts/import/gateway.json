@@ -1,0 +1,238 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Insurance gateway - extended workshop checkpoint",
+    "version": "1.1.0"
+  },
+  "servers": [
+    {
+      "url": "https://gateway.example.invalid/pair-01/insurance"
+    }
+  ],
+  "security": [
+    {
+      "subscriptionKey": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "subscriptionKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Ocp-Apim-Subscription-Key"
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Workshop error contract",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "message",
+                "correlationId"
+              ],
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "correlationId": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "APIM built-in missing/invalid subscription key; policies may not run",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "statusCode",
+                "message"
+              ],
+              "properties": {
+                "statusCode": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/policies/{policyId}": {
+      "get": {
+        "operationId": "getPolicy",
+        "parameters": [
+          {
+            "name": "policyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^POL[0-9]{4}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Extended policy after module 6",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "policyId",
+                    "status",
+                    "product",
+                    "riskCategory"
+                  ],
+                  "properties": {
+                    "policyId": {
+                      "type": "string",
+                      "pattern": "^POL[0-9]{4}$"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "Active"
+                      ]
+                    },
+                    "product": {
+                      "type": "string",
+                      "enum": [
+                        "Home",
+                        "Motor"
+                      ]
+                    },
+                    "riskCategory": {
+                      "type": "string",
+                      "enum": [
+                        "Standard",
+                        "Elevated"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "504": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/policies/{policyId}/overview": {
+      "get": {
+        "operationId": "getPolicyOverview",
+        "parameters": [
+          {
+            "name": "policyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^POL[0-9]{4}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bounded synchronous policy and claims read",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "policy",
+                    "claimsSummary"
+                  ],
+                  "properties": {
+                    "policy": {
+                      "$ref": "#/paths/~1policies~1%7BpolicyId%7D/get/responses/200/content/application~1json/schema"
+                    },
+                    "claimsSummary": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "policyId",
+                        "openClaimCount",
+                        "totalIncurred",
+                        "currency"
+                      ],
+                      "properties": {
+                        "policyId": {
+                          "type": "string",
+                          "pattern": "^POL[0-9]{4}$"
+                        },
+                        "openClaimCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "totalIncurred": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "currency": {
+                          "type": "string",
+                          "enum": [
+                            "NZD"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "502": {
+            "$ref": "#/components/responses/Error"
+          },
+          "504": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    }
+  }
+}
